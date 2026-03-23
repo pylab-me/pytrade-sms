@@ -1,100 +1,52 @@
+from __future__ import annotations
+
 from pathlib import Path
 
-from buildkit.commands import ReleaseBuild
-from buildkit.options import default_build_options
-from buildkit.plan import BuildPlan
-from buildkit.version import read_version
-from setuptools import setup
-from setuptools.dist import Distribution
+from setuptools import Distribution, find_namespace_packages, setup
+from setuptools.command.build_py import build_py
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DIST_NAME = "pytrade-sms"
-MODULE_ROOT = "pytrade"
-VERSION_FILE = BASE_DIR / MODULE_ROOT / "sms" / "version.py"
-
-# 解析 --old / --release
-options = default_build_options()
-options.use_namespace_packages = True
-options.use_temp_build = False
-# - 只写 exclude_sources -> 不编译 .pyd，但可能还有 .py。
-# - 只写 exclude_modules -> 不打包 .py，但可能还有 .pyd。
-# - 两者都写 -> 在 wheel 里完全消失。
-options.exclude_sources = ["pytrade/sms/pipeline.py", "**/pipeline.py"]
-options.exclude_modules = ["pytrade/sms/pipeline.py", "pipeline.py"]
-options.exclude_sources += [
-    "pytrade/sms/core.py",
-    "**/core.py",
-    "pytrade/sms/inner_tests.py",
-    "**/inner_tests.py",
-    "pytrade/sms/power.py",
-    "**/power.py",
-]
-options.exclude_modules += [
-    "pytrade/sms/core.py",
-    "core.py",
-    "pytrade/sms/inner_tests.py",
-    "inner_tests.py",
-    "pytrade/sms/power.py",
-    "power.py",
-]
-options.exclude_package_patterns = ["tests", "examples*"]
+VERSION_FILE = BASE_DIR / "pytrade" / "sms" / "version.py"
+RUNTIME_PATTERNS = ["*.pyd", "*.so", "*.dll", "*.dylib"]
+EXCLUDED_SMS_MODULES = {"inner_tests", "pipeline", "power", "private_api"}
 
 
-class BuildExt(ReleaseBuild):
-    options = options
-    keep_files = {
-        "__init__.py",
-        "__main__.py",
-        "pkg_info.py",
-        "version.py",
-    }
+def read_version() -> str:
+    namespace: dict[str, str] = {}
+    exec(VERSION_FILE.read_text(encoding="utf-8"), namespace)
+    return namespace["__VERSION__"]
 
 
 class BinaryDistribution(Distribution):
-    def has_ext_modules(self):
+    def has_ext_modules(self) -> bool:
         return True
 
 
-plan = BuildPlan(
-    options=options,
-    packages=[MODULE_ROOT, f"{MODULE_ROOT}.*"],
-    package_dir={MODULE_ROOT: MODULE_ROOT},
-    exclude_packages=[
-        f"{MODULE_ROOT}.data",
-        f"{MODULE_ROOT}.data.*",
-        f"{MODULE_ROOT}.providers",
-        f"{MODULE_ROOT}.providers.*",
-    ],
-    exclude_source_globs=[f"**/{file}" for file in BuildExt.keep_files],
-)
+class PublicOnlyBuildPy(build_py):
+    def find_package_modules(self, package: str, package_dir: str):
+        modules = super().find_package_modules(package, package_dir)
+        if package != "pytrade.sms":
+            return modules
+        return [
+            module
+            for module in modules
+            if module[1] not in EXCLUDED_SMS_MODULES
+        ]
 
-setup_kwargs, ext_modules = plan.build()
-setup_kwargs["cmdclass"] = plan.cmdclass(build_ext_cls=BuildExt)
 
 setup(
-    name=DIST_NAME,
-    version=read_version(VERSION_FILE),
+    name="pytrade-sms",
+    version=read_version(),
     description="SMS metadata engine with Rust runtime core.",
     author="HarmonSir",
     author_email="git@pylab.me",
     license="MIT",
     python_requires=">=3.12",
-    include_package_data=True,
-    package_data={
-        "pytrade.sms": [
-            "*.pyd",
-            "*.so",
-            "*.dll",
-            "*.dylib",
-        ],
-    },
+    packages=find_namespace_packages(include=["pytrade.sms"]),
+    include_package_data=False,
+    package_data={"pytrade.sms": RUNTIME_PATTERNS},
+    cmdclass={"build_py": PublicOnlyBuildPy},
     distclass=BinaryDistribution,
     zip_safe=False,
-    install_requires=[
-        "orjson",
-        "pandas[excel]",
-    ],
-    ext_modules=ext_modules,
-    **setup_kwargs,
 )
