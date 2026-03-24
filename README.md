@@ -31,9 +31,52 @@
 
 -----
 
+## 安装方法
+
+> 暂时未发 pip 或者 personal的pip。
+
+### WINDOWS
+
+```
+pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.3.1-cp313-cp313-win_amd64.whl
+```
+
+### LINUX
+
+```
+pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.3.1-cp313-cp313-linux_x86_64.whl
+```
+
+### MAC
+
+```
+pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.3.1-cp313-cp313-macosx_11_0_universal2.whl
+```
+
+
+## 使用示例
+
+```
+from pytrade.sms.public_api import PrivateSMS as SMSMetadataEngine
+sms_engine = SMSMetadataEngine()
+
+filters: dict[str, Any] = {"market": markets, "asset_type": "stock", }
+if exclude_st:
+    filters["tags__not"] = "ST"
+
+meta_data = sms_engine.query(filters=filters, limit=-1)
+
+data: dict[str, list[Any]] = {
+    "market": [obj.market for obj in meta_data],
+    "symbol": [obj.code[:-3] for obj in meta_data],
+}
+```
+
+-----
+
 ## 数据实体定义 (Python `@dataclass`)
 
-系统核心采用 Python 高性能 `dataclass` 定义，支持严格的类型校验与不可变性（Frozen）。
+系统核心采用 Python 高性能 `dataclass` 定义，支持严格的类型校验与不可变性（Frozen）。具体的定义见：[engine.py#L35](https://github.com/pylab-me/pytrade-sms/blob/main/pytrade/sms/engine.py#L35)
 
 ```python
 @dataclass(frozen=True)
@@ -61,23 +104,6 @@ class SecurityRecord:
         "mapping": ["Bloomberg: CH", "Reuters: .SS"],
         "specific": {"is_convertible": False}
     }
-```
-
------
-
-## 使用示例
-
-```
-filters: dict[str, Any] = {"market": markets, "asset_type": "stock", }
-if exclude_st:
-    filters["tags__not"] = "ST"
-
-meta_data = sms_engine.query(filters=filters, limit=-1)
-
-data: dict[str, list[Any]] = {
-    "market": [obj.market for obj in meta_data],
-    "symbol": [obj.code[:-3] for obj in meta_data],
-}
 ```
 
 -----
