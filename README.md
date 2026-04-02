@@ -33,7 +33,11 @@
 
 ## 安装方法
 
-> 暂时未发 pip 或者 personal的pip。
+> 暂时未发 pip 或者 personal 的pip。未有时间上 pypi 。
+> 
+> 数据月更。可自行改动 [Query 函数](https://github.com/pylab-me/pytrade-sms/blob/main/pytrade/sms/engine.py#L293) 做查询重排。
+> 
+> 每日更新：[Tien-Guan](https://github.com/pylab-me/Tien-Guan)
 
 ### WINDOWS
 
