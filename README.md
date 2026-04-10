@@ -33,28 +33,14 @@
 
 ## 安装方法
 
-> 暂时未发 pip 或者 personal 的pip。未有时间上 pypi 。
->
-> 数据月更。可自行改动 [Query 函数](https://github.com/pylab-me/pytrade-sms/blob/main/pytrade/sms/engine.py#L293) 做查询重排。
+> 数据月更。可自行改动 [Query 函数](https://github.com/pylab-me/pytrade-sms/blob/main/pytrade/sms/engine.py#L287) 做查询重排。
 >
 > 每日更新：[Tien-Guan](https://github.com/pylab-me/Tien-Guan)
 
-### WINDOWS
+### Install from [Pypi](https://pypi.org/project/pytrade-sms/)
 
 ```
-pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.4.0-cp310-abi3-win_amd64.whl
-```
-
-### LINUX
-
-```
-pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.4.0-cp310-abi3-manylinux_2_34_x86_64.whl
-```
-
-### MAC
-
-```
-pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.4.0-cp310-abi3-macosx_11_0_universal2.whl
+pip install -U pytrade-sms
 ```
 
 ## 使用示例

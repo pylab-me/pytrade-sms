@@ -37,7 +37,7 @@ jobs:
       private_src_repo_slug: ${{ vars.PYTRADE_SMS_PRIVATE_REPO_SLUG }}
       private_src_ref: ${{ inputs.private_src_ref || vars.PYTRADE_SMS_PRIVATE_REPO_REF || 'main' }}
     secrets:
-      private_repo_token: ${{ secrets.GH_POPTRIE_TOKEN }}
+      private_repo_token: ${{ secrets.GH_PRIVATE_SRC_TOKEN }}
 
   publish_latest:
     runs-on: ubuntu-latest

@@ -35,18 +35,39 @@ class PublicOnlyBuildPy(build_py):
         ]
 
 
+README = Path(__file__).resolve().parent / "README.md"
+
 setup(
     name="pytrade-sms",
     version=read_version(),
     description="SMS metadata engine with Rust runtime core.",
+    long_description=README.read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
     author="HarmonSir",
     author_email="git@pylab.me",
-    license="MIT",
+    license="Apache-2.0",
     python_requires=">=3.10",
     packages=find_namespace_packages(include=["pytrade.sms"]),
     include_package_data=False,
     package_data={"pytrade.sms": RUNTIME_PATTERNS},
     cmdclass={"build_py": PublicOnlyBuildPy},
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: MacOS",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Programming Language :: Rust",
+        "Typing :: Typed",
+    ],
     distclass=BinaryDistribution,
     zip_safe=False,
 )

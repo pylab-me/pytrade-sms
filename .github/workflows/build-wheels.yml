@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ env.PRIVATE_SRC_REPO_SLUG }}
-          token: ${{ secrets.private_repo_token || secrets.GH_POPTRIE_TOKEN }}
+          token: ${{ secrets.private_repo_token || secrets.GH_PRIVATE_SRC_TOKEN }}
           ref: ${{ env.PRIVATE_SRC_REF }}
           path: private-src
 

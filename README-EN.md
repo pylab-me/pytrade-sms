@@ -17,10 +17,10 @@ Internal-only API is not part of the compatibility contract:
 
 ## Installation
 
-Install from the latest GitHub release:
+Install from the latest GitHub release or Pypi:
 
 ```bash
-pip install -U https://github.com/pylab-me/pytrade-sms/releases/download/latest/pytrade_sms-0.3.2-cp313-cp313-win_amd64.whl
+pip install -U pytrade-sms
 ```
 
 Replace the wheel file name with the platform-specific asset for Linux or macOS.
