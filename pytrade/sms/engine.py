@@ -1,7 +1,7 @@
-"""SMS engine facade built on top of `sms_runtime`.
+"""Public SMS engine facade.
 
-Python 侧仅保留 domain object、query 风格与评分逻辑；
-full payload、索引、过滤与快照读写全部下沉到 `sms_runtime`。
+This module defines the public Python-side domain model and query facade.
+The native storage, indexing, filtering, and snapshot runtime are provided by `sms_runtime`.
 """
 from __future__ import annotations
 
@@ -166,20 +166,14 @@ class PersistenceMixin:
     def _derive_index_file_path(full_file_path: str | Path) -> Path:
         full_path = Path(full_file_path)
         suffix = "".join(full_path.suffixes)
-        if suffix:
-            base = full_path.name[: -len(suffix)]
-        else:
-            base = full_path.name
+        base = full_path.name[: -len(suffix)] if suffix else full_path.name
         return full_path.with_name(f"{base}.index.bin")
 
     @staticmethod
     def _derive_manifest_file_path(full_file_path: str | Path) -> Path:
         full_path = Path(full_file_path)
         suffix = "".join(full_path.suffixes)
-        if suffix:
-            base = full_path.name[: -len(suffix)]
-        else:
-            base = full_path.name
+        base = full_path.name[: -len(suffix)] if suffix else full_path.name
         return full_path.with_name(f"{base}.manifest.json")
 
     def save_to_file(self, file_path: str | Path, records: List[SecurityRecord]):
@@ -272,16 +266,16 @@ class SMSMetadataEngine(PersistenceMixin):
         self._search_cache = []
 
         for idx, record in enumerate(records):
-            cat_str = " ".join(str(value) for value in record.categories.values())
-            attr_values: List[str] = []
+            category_blob = " ".join(str(value) for value in record.categories.values())
+            attribute_values: List[str] = []
             for value in record.attributes.values():
                 if isinstance(value, (str, int, float)):
-                    attr_values.append(str(value))
+                    attribute_values.append(str(value))
             blob = {
                 "code": record.code.upper(),
                 "name": record.name.upper(),
                 "pinyin": record.pinyin.upper(),
-                "tags": (cat_str + " " + " ".join(attr_values)).upper(),
+                "tags": (category_blob + " " + " ".join(attribute_values)).upper(),
             }
             self._search_cache.append((blob, idx))
 
@@ -309,7 +303,7 @@ class SMSMetadataEngine(PersistenceMixin):
                 return []
 
         if not text or not text.strip():
-            results = []
+            results: List[SecurityRecord] = []
             for record in self._records_list:
                 if candidate_codes is not None and record.code not in candidate_codes:
                     continue
@@ -327,19 +321,16 @@ class SMSMetadataEngine(PersistenceMixin):
                 continue
 
             score = 0.0
-            b_code = blob["code"]
-            b_name = blob["name"]
-
-            if clean_query == b_code:
+            if clean_query == blob["code"]:
                 score += 100.0
-            elif b_code.startswith(clean_query):
+            elif blob["code"].startswith(clean_query):
                 score += 50.0
-            elif clean_query in b_code:
+            elif clean_query in blob["code"]:
                 score += 10.0
 
-            if clean_query == b_name:
+            if clean_query == blob["name"]:
                 score += 80.0
-            elif clean_query in b_name:
+            elif clean_query in blob["name"]:
                 score += 40.0
 
             if clean_query in blob["pinyin"]:

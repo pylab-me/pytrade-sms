@@ -42,7 +42,7 @@ setup(
     author="HarmonSir",
     author_email="git@pylab.me",
     license="MIT",
-    python_requires=">=3.12",
+    python_requires=">=3.10",
     packages=find_namespace_packages(include=["pytrade.sms"]),
     include_package_data=False,
     package_data={"pytrade.sms": RUNTIME_PATTERNS},

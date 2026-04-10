@@ -1,0 +1,123 @@
+name: Build Wheels
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_call:
+    inputs:
+      private_src_repo_slug:
+        description: "Private source repository slug"
+        required: true
+        type: string
+      private_src_ref:
+        description: "Private source repository ref"
+        required: false
+        default: "main"
+        type: string
+    secrets:
+      private_repo_token:
+        description: "Token for private repository checkout"
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      private_src_ref:
+        description: "Private source repository ref"
+        required: false
+        default: "main"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    env:
+      PYTHONIOENCODING: "utf-8"
+      PYTHONUTF8: "1"
+      PRIVATE_SRC_REPO_SLUG: ${{ inputs.private_src_repo_slug || vars.PYTRADE_SMS_PRIVATE_REPO_SLUG }}
+      PRIVATE_SRC_REF: ${{ inputs.private_src_ref || vars.PYTRADE_SMS_PRIVATE_REPO_REF || 'main' }}
+
+    steps:
+      - name: Checkout public repo
+        uses: actions/checkout@v6
+
+      - name: Checkout private repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.PRIVATE_SRC_REPO_SLUG }}
+          token: ${{ secrets.private_repo_token || secrets.GH_POPTRIE_TOKEN }}
+          ref: ${{ env.PRIVATE_SRC_REF }}
+          path: private-src
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            private-src/pytrade-sms-rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('private-src/pytrade-sms-rust/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Create venv
+        run: |
+          python -m venv .venv
+          if [ -x ".venv/bin/python" ]; then
+            echo "PYTHON_EXEC=$PWD/.venv/bin/python" >> $GITHUB_ENV
+          else
+            echo "PYTHON_EXEC=$PWD/.venv/Scripts/python.exe" >> $GITHUB_ENV
+          fi
+
+      - name: Install build deps
+        run: |
+          $PYTHON_EXEC -m pip install --upgrade pip maturin setuptools wheel
+
+      - name: Install auditwheel (Linux)
+        if: runner.os == 'Linux'
+        run: $PYTHON_EXEC -m pip install --upgrade auditwheel
+
+      - name: Build runtime wheels
+        run: $PYTHON_EXEC -m maturin build --release --manifest-path pytrade-sms-rust/Cargo.toml --out "$GITHUB_WORKSPACE/dist"
+        working-directory: ${{ github.workspace }}/private-src
+
+      - name: Repack wheels
+        env:
+          PYTRADE_SMS_DIST_DIR: dist
+        run: $PYTHON_EXEC .github/scripts/repack_wheels.py
+
+      - name: Install wheel
+        run: $PYTHON_EXEC -m pip install dist/*.whl
+
+      - name: Run public facade tests
+        run: $PYTHON_EXEC -m unittest discover tests
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist/*.whl
+          retention-days: 3
